@@ -1,0 +1,12 @@
+{
+  "author": "Robert Carone",
+  "dependencies": { "com.unity.render-pipelines.core": "10.0.0" },
+  "description": "Allows easy for overriding of material and shader properties of renderer components in scene or prefab game objects.",
+  "displayName": "Material Overrides",
+  "keywords": [ "unity" ],
+  "license": "None",
+  "name": "com.rac.material-overrides",
+  "unity": "2020.2",
+  "unityRelease": "0f1",
+  "version": "0.0.1"
+}
