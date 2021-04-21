@@ -9,6 +9,7 @@ Requirements
 -------
 
 - Requires Unity2019.4 or later
+- Requires Core RP package 7.x or later
 
 Installation
 ------------
