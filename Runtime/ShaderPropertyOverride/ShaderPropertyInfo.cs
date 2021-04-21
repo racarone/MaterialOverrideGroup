@@ -127,22 +127,27 @@ namespace MaterialOverrides
                 case ShaderPropertyType.Texture:
                     m_TextureDimension = shader.GetPropertyTextureDimension(propertyIndex);
                     m_DefaultTexureName = shader.GetPropertyTextureDefaultName(propertyIndex);
-                    m_DefaultTexureValue = m_TextureDimension switch
+                    switch (m_TextureDimension)
                     {
-                        TextureDimension.Tex2D => m_DefaultTexureName switch
-                        {
-                            "white" => Texture2D.whiteTexture,
-                            "black" => Texture2D.blackTexture,
-                            "gray"  => Texture2D.grayTexture,
-                            "bump"  => Texture2D.normalTexture,
-                            _       => null
-                        },
-                        TextureDimension.Tex3D     => CoreUtils.blackVolumeTexture,
-                        TextureDimension.Cube      => CoreUtils.blackCubeTexture,
-                        TextureDimension.CubeArray => CoreUtils.magentaCubeTextureArray,
-                        _                          => null
-                    };
-
+                        case TextureDimension.Tex2D:
+                            switch (m_DefaultTexureName)
+                            {
+                                case "white": m_DefaultTexureValue = Texture2D.whiteTexture; break;
+                                case "black": m_DefaultTexureValue = Texture2D.blackTexture; break;
+                                case "gray":  m_DefaultTexureValue = Texture2D.grayTexture; break;
+                                case "bump":  m_DefaultTexureValue = Texture2D.normalTexture; break;
+                            }
+                            break;
+                        case TextureDimension.Tex3D:
+                            m_DefaultTexureValue = CoreUtils.blackVolumeTexture;
+                            break;
+                        case TextureDimension.Cube:
+                            m_DefaultTexureValue = CoreUtils.blackCubeTexture;
+                            break;
+                        case TextureDimension.CubeArray:
+                            m_DefaultTexureValue = CoreUtils.magentaCubeTextureArray;
+                            break;
+                    }
                     break;
             }
         }

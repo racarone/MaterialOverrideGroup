@@ -58,7 +58,9 @@ namespace MaterialOverrides
             if (m_BaseEditor != null) // Can happen in tests.
                 m_BaseEditor.Repaint();
 
+#if UNITY_2020_2_OR_NEWER
             SettingsService.RepaintAllSettingsWindow();
+#endif
         }
 
         public void OnInspectorGUI()

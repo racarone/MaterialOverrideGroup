@@ -2,19 +2,20 @@
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace MaterialOverrides
 {
     [ExecuteAlways]
-    public class MaterialPropertyOverride : MonoBehaviour
+    public class MaterialOverrideGroup : MonoBehaviour
     {
         [SerializeField]
-        List<ShaderPropertyOverrideList> m_ShaderOverrides = new List<ShaderPropertyOverrideList>();
-        public List<ShaderPropertyOverrideList> shaderOverrides => m_ShaderOverrides;
+        List<ShaderPropertyOverrideList> m_ShaderPropertyOverrides = new List<ShaderPropertyOverrideList>();
+        public List<ShaderPropertyOverrideList> shaderPropertyOverrides => m_ShaderPropertyOverrides;
 
         [SerializeField]
-        List<MaterialPropertyOverrideList> m_MaterialOverrides = new List<MaterialPropertyOverrideList>();
-        public List<MaterialPropertyOverrideList> materialOverrides => m_MaterialOverrides;
+        List<MaterialPropertyOverrideList> m_MaterialPropertyOverrides = new List<MaterialPropertyOverrideList>();
+        public List<MaterialPropertyOverrideList> materialPropertyOverrides => m_MaterialPropertyOverrides;
 
         [SerializeField]
         List<Renderer> m_Renderers = new List<Renderer>();
@@ -46,11 +47,11 @@ namespace MaterialOverrides
             m_MaterialPropertyBlock = new MaterialPropertyBlock();
             
             m_ShaderToOverrideList.Clear();
-            foreach (var list in m_ShaderOverrides)
+            foreach (var list in m_ShaderPropertyOverrides)
                 m_ShaderToOverrideList.Add(list.shader, list);
             
             m_MaterialToOverrideList.Clear();
-            foreach (var list in m_MaterialOverrides)
+            foreach (var list in m_MaterialPropertyOverrides)
                 m_MaterialToOverrideList.Add(list.material, list);
 
             ClearOverrides();
@@ -155,7 +156,7 @@ namespace MaterialOverrides
 
             foreach (var shader in shaders)
             {
-                var overrideList = m_ShaderOverrides.Find(x => x.shader == shader);
+                var overrideList = m_ShaderPropertyOverrides.Find(x => x.shader == shader);
                 if (!overrideList)
                 {
                     overrideList = ScriptableObject.CreateInstance<ShaderPropertyOverrideList>();
@@ -169,13 +170,13 @@ namespace MaterialOverrides
             m_Shaders.Clear();
             m_Shaders.AddRange(shaders.ToArray());
             m_Shaders.Sort((a, b) => string.CompareOrdinal(a.name, b.name)); // For the inspector
-            m_ShaderOverrides = m_ShaderToOverrideList.Values.ToList();
+            m_ShaderPropertyOverrides = m_ShaderToOverrideList.Values.ToList();
 
             // Material overrides
 
             foreach (var material in materials)
             {
-                var overrideList = m_MaterialOverrides.Find(x => x.material == material);
+                var overrideList = m_MaterialPropertyOverrides.Find(x => x.material == material);
                 if (!overrideList)
                 {
                     overrideList = ScriptableObject.CreateInstance<MaterialPropertyOverrideList>();
@@ -189,7 +190,7 @@ namespace MaterialOverrides
             m_Materials.Clear();
             m_Materials.AddRange(materials.ToArray());
             m_Materials.Sort((a, b) => string.CompareOrdinal(a.name, b.name)); // For the inspector
-            m_MaterialOverrides = m_MaterialToOverrideList.Values.ToList();
+            m_MaterialPropertyOverrides = m_MaterialToOverrideList.Values.ToList();
 
             RefreshOverrideCache();
             ApplyOverrides();

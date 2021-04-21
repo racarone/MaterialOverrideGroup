@@ -1,13 +1,10 @@
 {
-    "name": "MaterialOverrides.Editor",
+    "name": "MaterialOverrideGroup.Runtime",
     "rootNamespace": "",
     "references": [
-        "GUID:0dd9979c400e92d4588c2cad3e884b18",
-        "GUID:3eae0364be2026648bf74846acb8a731"
+        "GUID:df380645f10b7bc4b97d4f5eb6303d95"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
