@@ -8,21 +8,6 @@ namespace MaterialOverrides
     [ExecuteAlways]
     public sealed class MaterialOverrideGroup : MonoBehaviour
     {
-        public enum ApplyMode
-        {
-            Update,
-            LateUpdate,
-            ViaScripting
-        }
-
-        [SerializeField]
-        ApplyMode m_ApplyMode = ApplyMode.LateUpdate;
-        public ApplyMode applyMode
-        {
-            get => m_ApplyMode;
-            set => m_ApplyMode = value;
-        }
-
         [SerializeField]
         ShaderPropertyOverrideList[] m_ShaderPropertyOverrides = new ShaderPropertyOverrideList[0];
         public ShaderPropertyOverrideList[] shaderPropertyOverrides => m_ShaderPropertyOverrides;
@@ -55,7 +40,6 @@ namespace MaterialOverrides
         RendererOverrideCacheEntry[] m_RendererOverrideCache = new RendererOverrideCacheEntry[0];
         
         MaterialPropertyBlock m_MaterialPropertyBlock;
-        bool m_Dirty;
 
         void OnEnable()
         {
@@ -77,23 +61,6 @@ namespace MaterialOverrides
         void OnDisable()
         {
             ClearOverrides();
-        }
-
-        void Update()
-        {
-            if (m_Dirty && m_ApplyMode == ApplyMode.Update)
-                Apply();
-        }
-
-        void LateUpdate()
-        {
-            if (m_Dirty && m_ApplyMode == ApplyMode.LateUpdate)
-                Apply();
-        }
-
-        public void SetDirty()
-        {
-            m_Dirty = true;
         }
 
         public bool TryGetOverride(Shader shader, out ShaderPropertyOverrideList propertyOverrideList)

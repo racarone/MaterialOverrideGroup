@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Rendering;
@@ -16,7 +15,7 @@ namespace MaterialOverrides
         SerializedProperty m_MaterialPropertyOverrides;
         SerializedProperty m_Renderers;
 
-        Dictionary<ShaderPropertyOverrideList, ShaderPropertyOverrideListEditor> m_ShaderOverrideEditors = new Dictionary<ShaderPropertyOverrideList, ShaderPropertyOverrideListEditor>();
+        readonly Dictionary<ShaderPropertyOverrideList, ShaderPropertyOverrideListEditor> m_ShaderOverrideEditors = new Dictionary<ShaderPropertyOverrideList, ShaderPropertyOverrideListEditor>();
         EditorPrefBool m_ShaderOverridesFoldout;
         EditorPrefBool m_MaterialOverridesFoldout;
 
@@ -149,10 +148,6 @@ namespace MaterialOverrides
 
             EditorGUI.BeginChangeCheck();
 
-            EditorGUILayout.Space();
-            m_Target.applyMode = (MaterialOverrideGroup.ApplyMode) EditorGUILayout.EnumPopup((MaterialOverrideGroup.ApplyMode) m_Target.applyMode);
-            EditorGUILayout.Space();
-
             CoreEditorUtils.DrawSplitter();
             m_ShaderOverridesFoldout.value = EditorGUILayout.BeginFoldoutHeaderGroup(m_ShaderOverridesFoldout.value, "Shader Overrides");
             if (m_ShaderOverridesFoldout.value)
@@ -238,7 +233,7 @@ namespace MaterialOverrides
 
             if (EditorGUI.EndChangeCheck())
             {
-                m_Target.SetDirty();
+                m_Target.Apply();
             }
         }
     }
