@@ -12,6 +12,12 @@ namespace MaterialOverrides
             public static GUIContent overrideSettingText { get; } = EditorGUIUtility.TrTextContent("", "Override this property.");
             public static GUIContent allText { get; } = EditorGUIUtility.TrTextContent("ALL", "Toggle to show all properties.");
             public static GUIContent activeText { get; } = EditorGUIUtility.TrTextContent("ACTIVE", "Toggle to only show overriden properties.");
+            public static GUIStyle smallLock { get; }
+
+            static Styles()
+            {
+                smallLock = new GUIStyle("IN LockButton");
+            }
         }
 
         public ShaderPropertyOverrideList target { get; }
@@ -116,15 +122,16 @@ namespace MaterialOverrides
             for (int i = 0, count = serializedOverrides.Length; i < count; ++i)
             {
                 var property = serializedOverrides[i];
-                if (!showAll && !property.overrideState.boolValue)
+                if (!showAll && !property.overrideState.boolValue && !property.pinnedState.boolValue)
                     continue;
                 
                 var flags = (ShaderPropertyFlags) property.propertyInfo.flags.intValue;
-                if (!showHidden && (flags & ShaderPropertyFlags.HideInInspector) == 0)
+                if (!showHidden && (flags & ShaderPropertyFlags.HideInInspector) != 0)
                     continue;
 
                 using (new EditorGUILayout.HorizontalScope())
                 {
+                    DrawPinnedCheckbox(property.pinnedState);
                     DrawOverrideCheckbox(property.overrideState);
 
                     // Property
@@ -139,7 +146,7 @@ namespace MaterialOverrides
                         switch (type)
                         {
                             case ShaderPropertyType.Color:
-                                var hdr = (flags & ShaderPropertyFlags.HDR) == 0;
+                                var hdr = (flags & ShaderPropertyFlags.HDR) != 0;
                                 property.colorValue.colorValue = EditorGUILayout.ColorField(title, property.colorValue.colorValue, false, true, hdr);
                                 break;
                             case ShaderPropertyType.Float:
@@ -161,7 +168,7 @@ namespace MaterialOverrides
             }
         }
 
-        static Vector2? s_ToggleSize;
+        static Vector2? s_SmallTickboxSize;
 
         static void DrawOverrideCheckbox(SerializedProperty overrideState)
         {
@@ -170,14 +177,33 @@ namespace MaterialOverrides
             var overrideRect = GUILayoutUtility.GetRect(new GUIContent("ALL"), CoreEditorStyles.miniLabelButton, GUILayout.Height(height), GUILayout.ExpandWidth(false));
 
             // also center vertically the checkbox
-            if (!s_ToggleSize.HasValue)
-                s_ToggleSize = CoreEditorStyles.smallTickbox.CalcSize(Styles.overrideSettingText);
+            if (!s_SmallTickboxSize.HasValue)
+                s_SmallTickboxSize = CoreEditorStyles.smallTickbox.CalcSize(Styles.overrideSettingText);
                 
-            Vector2 overrideToggleSize = s_ToggleSize.Value;
+            Vector2 overrideToggleSize = s_SmallTickboxSize.Value;
             overrideRect.yMin += height * 0.5f - overrideToggleSize.y * 0.5f;
             overrideRect.xMin += overrideToggleSize.x * 0.5f;
 
             overrideState.boolValue = GUI.Toggle(overrideRect, overrideState.boolValue, Styles.overrideSettingText, CoreEditorStyles.smallTickbox);
+        }
+
+        static Vector2? s_LockSize;
+
+        static void DrawPinnedCheckbox(SerializedProperty overrideState)
+        {
+            // Create a rect the height + vspacing of the property that is being overriden
+            var height = EditorGUI.GetPropertyHeight(overrideState) + EditorGUIUtility.standardVerticalSpacing;
+            var overrideRect = GUILayoutUtility.GetRect(new GUIContent("AL"), CoreEditorStyles.miniLabelButton, GUILayout.Height(height), GUILayout.ExpandWidth(false));
+
+            // also center vertically the checkbox
+            if (!s_LockSize.HasValue)
+                s_LockSize = Styles.smallLock.CalcSize(Styles.overrideSettingText);
+                
+            Vector2 overrideToggleSize = s_LockSize.Value;
+            overrideRect.yMin += height * 0.5f - overrideToggleSize.y * 0.5f;
+            overrideRect.xMin += overrideToggleSize.x * 0.5f;
+
+            overrideState.boolValue = GUI.Toggle(overrideRect, overrideState.boolValue, Styles.overrideSettingText, Styles.smallLock);
         }
     }
 }

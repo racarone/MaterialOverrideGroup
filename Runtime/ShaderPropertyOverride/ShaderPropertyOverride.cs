@@ -8,6 +8,9 @@ namespace MaterialOverrides
     public sealed class ShaderPropertyOverride
     {
         [SerializeField]
+        bool m_PinnedState;
+
+        [SerializeField]
         bool m_OverrideState;
         public bool overrideState
         {
