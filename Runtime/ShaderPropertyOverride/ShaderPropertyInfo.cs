@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -151,6 +152,11 @@ namespace MaterialOverrides
                     break;
             }
         }
+
+        public override int GetHashCode()
+        {
+            return m_Id;
+        }
     }
     
     public static class ShaderPropertyInfoCache
@@ -162,11 +168,11 @@ namespace MaterialOverrides
             if (s_Cache.TryGetValue(shader.GetInstanceID(), out var propertyInfoList))
                 return propertyInfoList;
 
-            propertyInfoList = new List<ShaderPropertyInfo>();
+            var propertyInfoSet = new HashSet<ShaderPropertyInfo>();
             for (int i = 0, count = shader.GetPropertyCount(); i < count; i++)
-                propertyInfoList.Add(new ShaderPropertyInfo(shader, i));
+                propertyInfoSet.Add(new ShaderPropertyInfo(shader, i));
 
-            return s_Cache[shader.GetInstanceID()] = propertyInfoList;
+            return s_Cache[shader.GetInstanceID()] = propertyInfoSet.ToList();
         }
 
         public static List<ShaderPropertyOverride> CreatePropertyValues(IEnumerable<ShaderPropertyInfo> infos)

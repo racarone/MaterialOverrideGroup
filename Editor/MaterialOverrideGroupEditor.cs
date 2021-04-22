@@ -11,6 +11,7 @@ namespace MaterialOverrides
     {
         MaterialOverrideGroup m_Target;
 
+        SerializedProperty m_ApplyMode;
         SerializedProperty m_ShaderPropertyOverrides;
         SerializedProperty m_MaterialPropertyOverrides;
         SerializedProperty m_Renderers;
@@ -21,12 +22,15 @@ namespace MaterialOverrides
 
         void OnEnable()
         {
+            m_ApplyMode = serializedObject.FindProperty("m_ApplyMode");
             m_ShaderPropertyOverrides = serializedObject.FindProperty("m_ShaderPropertyOverrides");
             m_MaterialPropertyOverrides = serializedObject.FindProperty("m_MaterialPropertyOverrides");
             m_Renderers = serializedObject.FindProperty("m_Renderers");
 
             m_Target = (MaterialOverrideGroup) target;
+            m_Target.ClearOverrides();
             m_Target.Populate();
+            m_Target.Apply();
             RefreshEditors();
 
             m_ShaderOverridesFoldout = new EditorPrefBool($"{typeof(MaterialOverrideGroupEditor)}:ShaderOverridesFoldout", true);
@@ -47,7 +51,7 @@ namespace MaterialOverrides
 
             m_Target.ClearOverrides();
             m_Target.Populate();
-            m_Target.Apply();
+            m_Target.SetDirty();
             
             RefreshEditors();
         }
@@ -55,6 +59,8 @@ namespace MaterialOverrides
         void RefreshEditors()
         {
             m_ShaderOverrideEditors.Clear();
+            
+            serializedObject.Update();
             
             RefreshShaderEditors();
             RefreshMaterialEditors();
@@ -95,6 +101,22 @@ namespace MaterialOverrides
             if (!m_Target)
                 return;
 
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Populate"))
+                    m_Target.Populate();
+                
+                if (GUILayout.Button("Apply"))
+                    m_Target.Apply();
+
+                if (GUILayout.Button("Reset"))
+                {
+                    m_Target.Reset();
+                    RefreshEditors();
+                    Repaint();
+                }
+            }
+
             serializedObject.Update();
 
             if (m_Target.renderers.Length == 0)
@@ -103,6 +125,8 @@ namespace MaterialOverrides
                 return;
             }
 
+            EditorGUILayout.Space();
+            EditorGUILayout.PropertyField(m_ApplyMode);
             EditorGUILayout.Space();
 
             // Find null renderers
@@ -121,22 +145,6 @@ namespace MaterialOverrides
             {
                 m_Renderers.arraySize += 1;
                 m_Renderers.GetArrayElementAtIndex(m_Renderers.arraySize - 1).objectReferenceValue = (Object) renderer;
-            }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Refresh"))
-                    m_Target.Populate();
-                
-                if (GUILayout.Button("Apply"))
-                    m_Target.Apply();
-
-                if (GUILayout.Button("Reset"))
-                {
-                    m_Target.Reset();
-                    RefreshEditors();
-                    Repaint();
-                }
             }
 
             EditorGUI.BeginChangeCheck();
@@ -224,7 +232,7 @@ namespace MaterialOverrides
 
             if (EditorGUI.EndChangeCheck())
             {
-                m_Target.Apply();
+                m_Target.SetDirty();
             }
         }
     }

@@ -45,7 +45,10 @@ namespace MaterialOverrides
         {
             m_IdToOverride.Clear();
             foreach (var propertyOverride in m_Overrides)
-                m_IdToOverride.Add(propertyOverride.propertyInfo.id, propertyOverride);
+            {
+                if (!m_IdToOverride.ContainsKey(propertyOverride.propertyInfo.id))
+                    m_IdToOverride.Add(propertyOverride.propertyInfo.id, propertyOverride);
+            }
         }
 
         public bool TryGetOverride(int id, out ShaderPropertyOverride propertyOverride)

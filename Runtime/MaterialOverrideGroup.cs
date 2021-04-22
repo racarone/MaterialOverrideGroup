@@ -6,8 +6,23 @@ using UnityEngine;
 namespace MaterialOverrides
 {
     [ExecuteAlways]
-    public class MaterialOverrideGroup : MonoBehaviour
+    public sealed class MaterialOverrideGroup : MonoBehaviour
     {
+        public enum ApplyMode
+        {
+            Update,
+            LateUpdate,
+            ViaScripting
+        }
+
+        [SerializeField]
+        ApplyMode m_ApplyMode = ApplyMode.LateUpdate;
+        public ApplyMode applyMode
+        {
+            get => m_ApplyMode;
+            set => m_ApplyMode = value;
+        }
+
         [SerializeField]
         ShaderPropertyOverrideList[] m_ShaderPropertyOverrides = new ShaderPropertyOverrideList[0];
         public ShaderPropertyOverrideList[] shaderPropertyOverrides => m_ShaderPropertyOverrides;
@@ -37,9 +52,10 @@ namespace MaterialOverrides
 
         readonly Dictionary<Shader, ShaderPropertyOverrideList> m_ShaderToOverrideList = new Dictionary<Shader, ShaderPropertyOverrideList>();
         readonly Dictionary<Material, MaterialPropertyOverrideList> m_MaterialToOverrideList = new Dictionary<Material, MaterialPropertyOverrideList>();
-        readonly List<RendererOverrideCacheEntry> m_RendererOverrideCache = new List<RendererOverrideCacheEntry>();
+        RendererOverrideCacheEntry[] m_RendererOverrideCache = new RendererOverrideCacheEntry[0];
         
         MaterialPropertyBlock m_MaterialPropertyBlock;
+        bool m_Dirty;
 
         void OnEnable()
         {
@@ -53,8 +69,8 @@ namespace MaterialOverrides
             foreach (var list in m_MaterialPropertyOverrides)
                 m_MaterialToOverrideList.Add(list.material, list);
 
-            ClearOverrides();
             RefreshOverrideCache();
+            ClearOverrides();
             Apply();
         }
 
@@ -62,7 +78,24 @@ namespace MaterialOverrides
         {
             ClearOverrides();
         }
-        
+
+        void Update()
+        {
+            if (m_Dirty && m_ApplyMode == ApplyMode.Update)
+                Apply();
+        }
+
+        void LateUpdate()
+        {
+            if (m_Dirty && m_ApplyMode == ApplyMode.LateUpdate)
+                Apply();
+        }
+
+        public void SetDirty()
+        {
+            m_Dirty = true;
+        }
+
         public bool TryGetOverride(Shader shader, out ShaderPropertyOverrideList propertyOverrideList)
         {
             return m_ShaderToOverrideList.TryGetValue(shader, out propertyOverrideList);
@@ -205,25 +238,28 @@ namespace MaterialOverrides
             if (m_MaterialPropertyBlock == null)
                 m_MaterialPropertyBlock = new MaterialPropertyBlock();
             
-            foreach (var value in m_RendererOverrideCache)
+            for (int i = 0; i < m_RendererOverrideCache.Length; ++i)
             {
-                if (!value.renderer)
+                ref var entry = ref m_RendererOverrideCache[i];
+                if (!entry.renderer)
                     continue;
                 
                 m_MaterialPropertyBlock.Clear();
                 
-                if (value.shaderOverrideList)
-                    value.shaderOverrideList.ApplyTo(m_MaterialPropertyBlock);
+                if (entry.shaderOverrideList && entry.shaderOverrideList)
+                    entry.shaderOverrideList.ApplyTo(m_MaterialPropertyBlock);
                 
-                if (value.materialOverrideList)
-                    value.materialOverrideList.ApplyTo(m_MaterialPropertyBlock);
+                if (entry.materialOverrideList)
+                    entry.materialOverrideList.ApplyTo(m_MaterialPropertyBlock);
                 
-                value.renderer.SetPropertyBlock(m_MaterialPropertyBlock);
+                entry.renderer.SetPropertyBlock(m_MaterialPropertyBlock);
             }
         }
 
         internal void RefreshOverrideCache()
         {
+            var cache = new List<RendererOverrideCacheEntry>();
+            
             foreach (var renderer in m_Renderers)
             {
                 if (!renderer || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
@@ -247,7 +283,7 @@ namespace MaterialOverrides
                     if (!hasShaderOverrides && !hasMaterialOverrides)
                         continue;
 
-                    m_RendererOverrideCache.Add(new RendererOverrideCacheEntry
+                    cache.Add(new RendererOverrideCacheEntry
                     {
                         renderer = renderer, 
                         shaderOverrideList = shaderOverrideList, 
@@ -255,6 +291,8 @@ namespace MaterialOverrides
                     });
                 }
             }
+
+            m_RendererOverrideCache = cache.ToArray();
         }
     }
 }
