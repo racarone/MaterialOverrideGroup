@@ -1,15 +1,15 @@
 Material Override Group
 ====
 
-![gif](https://media.giphy.com/media/0ssAhYXTP5l6PDig29/giphy.gif)
+![gif](https://media.giphy.com/media/mma7J8B5v7JD6yS9s9/giphy.gif)
 
 **Material Override Group** contains scripts that allow overriding materials and shaders on either a single object, or group of objects. These overrides are saved with the scene, rather than in a new material.
 
 Requirements
 -------
 
-- Requires Unity2019.4 or later
-- Requires Core RP package 7.x or later
+- Requires Unity 2019.4 or later
+- Requires Core RP package 7.x or later `com.unity.render-pipelines.core`
 
 Installation
 ------------
