@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Rendering;
@@ -40,6 +41,8 @@ namespace MaterialOverrides
         void OnDisable()
         {
             EditorApplication.hierarchyChanged -= OnHierarchyChanged;
+
+            m_Target.Apply();
         }
 
         void OnHierarchyChanged()
@@ -49,7 +52,7 @@ namespace MaterialOverrides
 
             m_Target.ClearOverrides();
             m_Target.Populate();
-            m_Target.SetDirty();
+            m_Target.Apply();
 
             RefreshEditors();
         }
