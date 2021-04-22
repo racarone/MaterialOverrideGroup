@@ -20,9 +20,8 @@ namespace MaterialOverrides
             }
         }
 
-        public ShaderPropertyOverrideList target { get; }
+        public ShaderPropertyOverrideList overrideList { get; }
         public Material material { get; }
-        public SerializedObject serializedObject { get; }
         public SerializedProperty baseProperty { get; }
         public SerializedProperty active { get; }
         public SerializedProperty overrides { get; }
@@ -49,14 +48,13 @@ namespace MaterialOverrides
         // Reference to the parent editor in the inspector
         Editor m_BaseEditor;
 
-        public ShaderPropertyOverrideListEditor(ShaderPropertyOverrideList target, SerializedProperty property, Editor baseEditor,  Material material = null)
+        public ShaderPropertyOverrideListEditor(ShaderPropertyOverrideList overrideList, SerializedProperty property, Editor baseEditor,  Material material = null)
         {
-            this.target = target;
+            this.overrideList = overrideList;
             this.material = material;
-            serializedObject = new SerializedObject(target);
             baseProperty = property;
-            active = serializedObject.FindProperty("m_Active");
-            overrides = serializedObject.FindProperty("m_Overrides");
+            active = property.FindPropertyRelative("m_Active");
+            overrides = property.FindPropertyRelative("m_Overrides");
             m_BaseEditor = baseEditor;
                 
             serializedOverrides = new SerializedShaderPropertyOverride[overrides.arraySize];
@@ -78,7 +76,7 @@ namespace MaterialOverrides
 
         public void OnInspectorGUI()
         {
-            serializedObject.Update();
+            baseProperty.serializedObject.Update();
 
             using (new EditorGUILayout.VerticalScope())
             {
@@ -90,13 +88,13 @@ namespace MaterialOverrides
                     EditorGUILayout.HelpBox("Multi editing not supported", MessageType.Info);
                 else
                 {
-                    DrawProperties(serializedOverrides, showAll, showHidden, serializedObject.targetObject);
+                    DrawProperties(serializedOverrides, showAll, showHidden, baseProperty.serializedObject.targetObject);
                 }
 
                 EditorGUILayout.Space();
             }
 
-            serializedObject.ApplyModifiedProperties();
+            baseProperty.serializedObject.ApplyModifiedProperties();
         }
 
         void DrawTopRow()

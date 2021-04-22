@@ -4,7 +4,8 @@ using UnityEngine;
 
 namespace MaterialOverrides
 {
-    public class ShaderPropertyOverrideList : ScriptableObject
+    [Serializable]
+    public class ShaderPropertyOverrideList
     {
         [SerializeField]
         bool m_Active = true;

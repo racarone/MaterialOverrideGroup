@@ -192,10 +192,14 @@ namespace MaterialOverrides
             
             foreach (var shader in newShaders)
             {
-                var overrideList = Array.Find(m_ShaderPropertyOverrides, x => x.shader == shader);
-                if (!overrideList)
+                ShaderPropertyOverrideList overrideList = null;
+                
+                if (m_ShaderPropertyOverrides != null && m_ShaderPropertyOverrides.Length > 0)
+                    overrideList = Array.Find(m_ShaderPropertyOverrides, x => x != null && x.shader == shader);
+                
+                if (overrideList == null)
                 {
-                    overrideList = ScriptableObject.CreateInstance<ShaderPropertyOverrideList>();
+                    overrideList = new ShaderPropertyOverrideList();
                     var shaderPropertyInfos = ShaderPropertyInfoCache.GetShaderPropertyInfoList(shader);
                     overrideList.Initialize(shader, ShaderPropertyInfoCache.CreatePropertyValues(shaderPropertyInfos));
                 }
@@ -214,10 +218,14 @@ namespace MaterialOverrides
 
             foreach (var material in newMaterials)
             {
-                var overrideList = Array.Find(m_MaterialPropertyOverrides, x => x.material == material);
-                if (!overrideList)
+                MaterialPropertyOverrideList overrideList = null;
+                
+                if (m_MaterialPropertyOverrides != null && m_MaterialPropertyOverrides.Length > 0)
+                    overrideList = Array.Find(m_MaterialPropertyOverrides, x => x != null && x.material == material);
+                
+                if (overrideList == null)
                 {
-                    overrideList = ScriptableObject.CreateInstance<MaterialPropertyOverrideList>();
+                    overrideList = new MaterialPropertyOverrideList();
                     var shaderPropertyInfos = ShaderPropertyInfoCache.GetShaderPropertyInfoList(material.shader);
                     overrideList.Initialize(material, ShaderPropertyInfoCache.CreatePropertyValues(shaderPropertyInfos));
                 }
@@ -246,10 +254,10 @@ namespace MaterialOverrides
                 
                 m_MaterialPropertyBlock.Clear();
                 
-                if (entry.shaderOverrideList && entry.shaderOverrideList)
+                if (entry.shaderOverrideList != null && entry.shaderOverrideList.active)
                     entry.shaderOverrideList.ApplyTo(m_MaterialPropertyBlock);
                 
-                if (entry.materialOverrideList)
+                if (entry.materialOverrideList != null && entry.materialOverrideList.active)
                     entry.materialOverrideList.ApplyTo(m_MaterialPropertyBlock);
                 
                 entry.renderer.SetPropertyBlock(m_MaterialPropertyBlock);

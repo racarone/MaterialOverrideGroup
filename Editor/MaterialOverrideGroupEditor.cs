@@ -11,7 +11,6 @@ namespace MaterialOverrides
     {
         MaterialOverrideGroup m_Target;
 
-        SerializedProperty m_ApplyMode;
         SerializedProperty m_ShaderPropertyOverrides;
         SerializedProperty m_MaterialPropertyOverrides;
         SerializedProperty m_Renderers;
@@ -22,7 +21,6 @@ namespace MaterialOverrides
 
         void OnEnable()
         {
-            m_ApplyMode = serializedObject.FindProperty("m_ApplyMode");
             m_ShaderPropertyOverrides = serializedObject.FindProperty("m_ShaderPropertyOverrides");
             m_MaterialPropertyOverrides = serializedObject.FindProperty("m_MaterialPropertyOverrides");
             m_Renderers = serializedObject.FindProperty("m_Renderers");
@@ -70,8 +68,8 @@ namespace MaterialOverrides
         {
             for (int i = 0, count = m_ShaderPropertyOverrides.arraySize; i < count; i++)
             {
+                var overrideList = m_Target.shaderPropertyOverrides[i];
                 var property = m_ShaderPropertyOverrides.GetArrayElementAtIndex(i);
-                var overrideList = (ShaderPropertyOverrideList) property.objectReferenceValue;
 
                 if (!m_ShaderOverrideEditors.TryGetValue(overrideList, out var editor))
                 {
@@ -85,8 +83,8 @@ namespace MaterialOverrides
         {
             for (int i = 0, count = m_MaterialPropertyOverrides.arraySize; i < count; i++)
             {
+                var overrideList = m_Target.materialPropertyOverrides[i];
                 var property = m_MaterialPropertyOverrides.GetArrayElementAtIndex(i);
-                var overrideList = (MaterialPropertyOverrideList) property.objectReferenceValue;
 
                 if (!m_ShaderOverrideEditors.TryGetValue(overrideList, out var editor))
                 {

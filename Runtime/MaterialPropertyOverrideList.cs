@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MaterialOverrides
 {
+    [Serializable]
     public class MaterialPropertyOverrideList : ShaderPropertyOverrideList
     {
         [SerializeField]
