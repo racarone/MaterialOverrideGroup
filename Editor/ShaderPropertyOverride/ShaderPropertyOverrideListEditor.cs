@@ -20,6 +20,7 @@ namespace MaterialOverrides
         public SerializedProperty baseProperty { get; }
         public SerializedProperty active { get; }
         public SerializedProperty overrides { get; }
+        public SerializedShaderPropertyOverride[] serializedOverrides { get; }
         
         public bool showHidden
         {
@@ -51,6 +52,12 @@ namespace MaterialOverrides
             active = serializedObject.FindProperty("m_Active");
             overrides = serializedObject.FindProperty("m_Overrides");
             m_BaseEditor = baseEditor;
+                
+            serializedOverrides = new SerializedShaderPropertyOverride[overrides.arraySize];
+            for (int i = 0; i < serializedOverrides.Length; ++i)
+            {
+                serializedOverrides[i] = new SerializedShaderPropertyOverride(overrides.GetArrayElementAtIndex(i));
+            }
         }
 
         public void Repaint()
@@ -77,7 +84,7 @@ namespace MaterialOverrides
                     EditorGUILayout.HelpBox("Multi editing not supported", MessageType.Info);
                 else
                 {
-                    DrawProperties(overrides, showAll, showHidden, serializedObject.targetObject);
+                    DrawProperties(serializedOverrides, showAll, showHidden, serializedObject.targetObject);
                 }
 
                 EditorGUILayout.Space();
@@ -102,18 +109,18 @@ namespace MaterialOverrides
             CoreEditorUtils.DrawSplitter();
         }
 
-        static void DrawProperties(SerializedProperty overridesProperty, bool showAll, bool showHidden, Object target)
+        static void DrawProperties(SerializedShaderPropertyOverride[] serializedOverrides, bool showAll, bool showHidden, Object target)
         {
             var singleLineHeightLayout = GUILayout.Height(EditorGUIUtility.singleLineHeight);
 
-            for (int i = 0, count = overridesProperty.arraySize; i < count; ++i)
+            for (int i = 0, count = serializedOverrides.Length; i < count; ++i)
             {
-                var property = new SerializedShaderPropertyOverride(overridesProperty.GetArrayElementAtIndex(i));
+                var property = serializedOverrides[i];
                 if (!showAll && !property.overrideState.boolValue)
                     continue;
                 
                 var flags = (ShaderPropertyFlags) property.propertyInfo.flags.intValue;
-                if (!showHidden && flags.HasFlag(ShaderPropertyFlags.HideInInspector))
+                if (!showHidden && (flags & ShaderPropertyFlags.HideInInspector) == 0)
                     continue;
 
                 using (new EditorGUILayout.HorizontalScope())
@@ -132,7 +139,7 @@ namespace MaterialOverrides
                         switch (type)
                         {
                             case ShaderPropertyType.Color:
-                                var hdr = flags.HasFlag(ShaderPropertyFlags.HDR);
+                                var hdr = (flags & ShaderPropertyFlags.HDR) == 0;
                                 property.colorValue.colorValue = EditorGUILayout.ColorField(title, property.colorValue.colorValue, false, true, hdr);
                                 break;
                             case ShaderPropertyType.Float:
@@ -154,6 +161,8 @@ namespace MaterialOverrides
             }
         }
 
+        static Vector2? s_ToggleSize;
+
         static void DrawOverrideCheckbox(SerializedProperty overrideState)
         {
             // Create a rect the height + vspacing of the property that is being overriden
@@ -161,7 +170,10 @@ namespace MaterialOverrides
             var overrideRect = GUILayoutUtility.GetRect(new GUIContent("ALL"), CoreEditorStyles.miniLabelButton, GUILayout.Height(height), GUILayout.ExpandWidth(false));
 
             // also center vertically the checkbox
-            var overrideToggleSize = CoreEditorStyles.smallTickbox.CalcSize(Styles.overrideSettingText);
+            if (!s_ToggleSize.HasValue)
+                s_ToggleSize = CoreEditorStyles.smallTickbox.CalcSize(Styles.overrideSettingText);
+                
+            Vector2 overrideToggleSize = s_ToggleSize.Value;
             overrideRect.yMin += height * 0.5f - overrideToggleSize.y * 0.5f;
             overrideRect.xMin += overrideToggleSize.x * 0.5f;
 
