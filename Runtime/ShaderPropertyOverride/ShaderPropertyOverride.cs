@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 namespace MaterialOverrides
 {
     [Serializable]
-    public class ShaderPropertyOverride
+    public sealed class ShaderPropertyOverride
     {
         [SerializeField]
         bool m_OverrideState;
@@ -106,19 +106,75 @@ namespace MaterialOverrides
             m_PropertyInfo = info;
 
             // Initialize with default values
-            switch (info.type)
+            switch (m_PropertyInfo.type)
             {
                 case ShaderPropertyType.Color:
                 case ShaderPropertyType.Vector:
-                    m_ColorValue = info.defaultVectorValue;
+                    m_ColorValue = m_PropertyInfo.defaultVectorValue;
                     break;
                 case ShaderPropertyType.Float:
                 case ShaderPropertyType.Range:
-                    m_FloatValue = info.defaultFloatValue;
+                    m_FloatValue = m_PropertyInfo.defaultFloatValue;
                     break;
                 case ShaderPropertyType.Texture:
-                    m_TextureValue = info.defaultTextureValue;
+                    m_TextureValue = m_PropertyInfo.defaultTextureValue;
                     break;
+            }
+        }
+
+        public void ApplyTo(MaterialPropertyBlock mpb)
+        {
+            if (m_OverrideState)
+            {
+                switch (m_PropertyInfo.type)
+                {
+                    case ShaderPropertyType.Color:
+                        mpb.SetColor(m_PropertyInfo.id, m_ColorValue);
+                        break;
+                    case ShaderPropertyType.Vector:
+                        mpb.SetVector(m_PropertyInfo.id, m_VectorValue);
+                        break;
+                    case ShaderPropertyType.Float:
+                    case ShaderPropertyType.Range:
+                        mpb.SetFloat(m_PropertyInfo.id, m_FloatValue);
+                        break;
+                    case ShaderPropertyType.Texture:
+                        if (m_TextureValue != null)
+                            mpb.SetTexture(m_PropertyInfo.id, m_TextureValue);
+                        else if (m_PropertyInfo.defaultTextureValue != null)
+                            mpb.SetTexture(m_PropertyInfo.id, m_PropertyInfo.defaultTextureValue);
+                        break;
+#if UNITY_2021_1_OR_NEWER
+                    case ShaderPropertyType.Int:
+                        mpb.SetInt(m_PropertyInfo.id, m_IntValue);
+                        break;
+#endif
+                }
+            }
+        }
+
+        public void Reset()
+        {
+            switch (m_PropertyInfo.type)
+            {
+                case ShaderPropertyType.Color:
+                    m_ColorValue = m_PropertyInfo.defaultVectorValue;
+                    break;
+                case ShaderPropertyType.Vector:
+                    m_VectorValue = m_PropertyInfo.defaultVectorValue;
+                    break;
+                case ShaderPropertyType.Float:
+                case ShaderPropertyType.Range:
+                    m_FloatValue = m_PropertyInfo.defaultFloatValue;
+                    break;
+                case ShaderPropertyType.Texture:
+                    m_TextureValue = m_PropertyInfo.defaultTextureValue;
+                    break;
+#if UNITY_2021_1_OR_NEWER
+                case ShaderPropertyType.Int:
+                    m_IntValue = 0;
+                    break;
+#endif
             }
         }
     }

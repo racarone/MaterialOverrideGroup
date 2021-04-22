@@ -26,7 +26,7 @@ namespace MaterialOverrides
             m_Renderers = serializedObject.FindProperty("m_Renderers");
 
             m_Target = (MaterialOverrideGroup) target;
-            m_Target.PopulateOverrides();
+            m_Target.Populate();
             RefreshEditors();
 
             m_ShaderOverridesFoldout = new EditorPrefBool($"{typeof(MaterialOverrideGroupEditor)}:ShaderOverridesFoldout", true);
@@ -45,7 +45,10 @@ namespace MaterialOverrides
             if (!m_Target)
                 return;
 
-            m_Target.PopulateOverrides();
+            m_Target.ClearOverrides();
+            m_Target.Populate();
+            m_Target.Apply();
+            
             RefreshEditors();
         }
 
@@ -94,7 +97,7 @@ namespace MaterialOverrides
 
             serializedObject.Update();
 
-            if (m_Target.renderers.Count == 0)
+            if (m_Target.renderers.Length == 0)
             {
                 EditorGUILayout.HelpBox($"{typeof(MaterialOverrideGroup)} contains no renderers.", MessageType.Info);
                 return;
@@ -120,6 +123,22 @@ namespace MaterialOverrides
                 m_Renderers.GetArrayElementAtIndex(m_Renderers.arraySize - 1).objectReferenceValue = (Object) renderer;
             }
 
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Refresh"))
+                    m_Target.Populate();
+                
+                if (GUILayout.Button("Apply"))
+                    m_Target.Apply();
+
+                if (GUILayout.Button("Reset"))
+                {
+                    m_Target.Reset();
+                    RefreshEditors();
+                    Repaint();
+                }
+            }
+
             EditorGUI.BeginChangeCheck();
 
             CoreEditorUtils.DrawSplitter();
@@ -128,7 +147,7 @@ namespace MaterialOverrides
             {
                 var targetShaders = m_Target.shaders;
                 
-                for (int i = 0, count = targetShaders.Count; i < count; i++)
+                for (int i = 0, count = targetShaders.Length; i < count; i++)
                 {
                     if (!m_Target.TryGetOverride(targetShaders[i], out var propertyOverrideList))
                         continue;
@@ -156,7 +175,7 @@ namespace MaterialOverrides
                     }
                 }
 
-                if (m_Target.shaders.Count == 0)
+                if (m_Target.shaders.Length == 0)
                     EditorGUILayout.HelpBox($"{typeof(MaterialOverrideGroup)} contains no shaders.", MessageType.Info);
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -168,7 +187,7 @@ namespace MaterialOverrides
                 var targetMaterials = m_Target.materials;
                 
                 // Draw materials
-                for (int i = 0, count = targetMaterials.Count; i < count; i++)
+                for (int i = 0, count = targetMaterials.Length; i < count; i++)
                 {
                     if (!m_Target.TryGetOverride(targetMaterials[i], out var propertyOverrideList))
                         continue;
@@ -196,7 +215,7 @@ namespace MaterialOverrides
                     }
                 }
 
-                if (m_Target.materials.Count == 0)
+                if (m_Target.materials.Length == 0)
                     EditorGUILayout.HelpBox($"{typeof(MaterialOverrideGroup)} contains no materials.", MessageType.Info);
             }
             EditorGUILayout.EndFoldoutHeaderGroup();
@@ -205,7 +224,7 @@ namespace MaterialOverrides
 
             if (EditorGUI.EndChangeCheck())
             {
-                m_Target.ApplyOverrides();
+                m_Target.Apply();
             }
         }
     }

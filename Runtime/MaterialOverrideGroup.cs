@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Serialization;
 
 namespace MaterialOverrides
 {
@@ -10,24 +9,24 @@ namespace MaterialOverrides
     public class MaterialOverrideGroup : MonoBehaviour
     {
         [SerializeField]
-        List<ShaderPropertyOverrideList> m_ShaderPropertyOverrides = new List<ShaderPropertyOverrideList>();
-        public List<ShaderPropertyOverrideList> shaderPropertyOverrides => m_ShaderPropertyOverrides;
+        ShaderPropertyOverrideList[] m_ShaderPropertyOverrides = new ShaderPropertyOverrideList[0];
+        public ShaderPropertyOverrideList[] shaderPropertyOverrides => m_ShaderPropertyOverrides;
 
         [SerializeField]
-        List<MaterialPropertyOverrideList> m_MaterialPropertyOverrides = new List<MaterialPropertyOverrideList>();
-        public List<MaterialPropertyOverrideList> materialPropertyOverrides => m_MaterialPropertyOverrides;
+        MaterialPropertyOverrideList[] m_MaterialPropertyOverrides = new MaterialPropertyOverrideList[0];
+        public MaterialPropertyOverrideList[] materialPropertyOverrides => m_MaterialPropertyOverrides;
 
         [SerializeField]
-        List<Renderer> m_Renderers = new List<Renderer>();
-        public List<Renderer> renderers => m_Renderers;
+        Renderer[] m_Renderers = new Renderer[0];
+        public Renderer[] renderers => m_Renderers;
 
         [SerializeField]
-        List<Shader> m_Shaders = new List<Shader>();
-        public List<Shader> shaders => m_Shaders;
+        Shader[] m_Shaders = new Shader[0];
+        public Shader[] shaders => m_Shaders;
 
         [SerializeField]
-        List<Material> m_Materials = new List<Material>();
-        public List<Material> materials => m_Materials;
+        Material[] m_Materials = new Material[0];
+        public Material[] materials => m_Materials;
 
         struct RendererOverrideCacheEntry
         {
@@ -56,7 +55,7 @@ namespace MaterialOverrides
 
             ClearOverrides();
             RefreshOverrideCache();
-            ApplyOverrides();
+            Apply();
         }
 
         void OnDisable()
@@ -104,9 +103,13 @@ namespace MaterialOverrides
             return TryGetOverridePropertyValue(material, Shader.PropertyToID(name), out propertyOverride);
         }
         
-        void Reset()
+        public void Reset()
         {
-            PopulateOverrides();
+            m_ShaderPropertyOverrides = new ShaderPropertyOverrideList[0];
+            m_MaterialPropertyOverrides = new MaterialPropertyOverrideList[0];
+            
+            ClearOverrides();
+            Populate();
         }
 
         /// Resets all renderer properties. Call to remove applied overrides.
@@ -123,40 +126,40 @@ namespace MaterialOverrides
             }
         }
 
+        static readonly List<Renderer> s_ChildRenderers = new List<Renderer>();
+
         /// Populates the list of renders and available overrides.
-        public void PopulateOverrides()
+        public void Populate()
         {
-            ClearOverrides();
-            
-            m_ShaderToOverrideList.Clear();
-            m_MaterialToOverrideList.Clear();
-            
             // Renderer list
 
-            var shaders = new HashSet<Shader>();
-            var materials = new HashSet<Material>();
-            var childRenderers = GetComponentsInChildren<Renderer>();
+            var newShaders = new HashSet<Shader>();
+            var newMaterials = new HashSet<Material>();
+            
+            s_ChildRenderers.Clear();
+            GetComponentsInChildren(false, s_ChildRenderers);
 
-            foreach (var renderer in childRenderers)
+            foreach (var renderer in s_ChildRenderers)
             {
                 foreach (var sharedMaterial in renderer.sharedMaterials)
                 {
-                    if (sharedMaterial == null)
-                        continue;
-
-                    shaders.Add(sharedMaterial.shader);
-                    materials.Add(sharedMaterial);
+                    if (sharedMaterial)
+                    {
+                        newShaders.Add(sharedMaterial.shader);
+                        newMaterials.Add(sharedMaterial);
+                    }
                 }
             }
 
-            m_Renderers.Clear();
-            m_Renderers.AddRange(childRenderers);
+            m_Renderers = s_ChildRenderers.ToArray();
 
             // Shader overrides
 
-            foreach (var shader in shaders)
+            m_ShaderToOverrideList.Clear();
+            
+            foreach (var shader in newShaders)
             {
-                var overrideList = m_ShaderPropertyOverrides.Find(x => x.shader == shader);
+                var overrideList = Array.Find(m_ShaderPropertyOverrides, x => x.shader == shader);
                 if (!overrideList)
                 {
                     overrideList = ScriptableObject.CreateInstance<ShaderPropertyOverrideList>();
@@ -166,17 +169,19 @@ namespace MaterialOverrides
                 
                 m_ShaderToOverrideList.Add(shader, overrideList);
             }
+            
 
-            m_Shaders.Clear();
-            m_Shaders.AddRange(shaders.ToArray());
-            m_Shaders.Sort((a, b) => string.CompareOrdinal(a.name, b.name)); // For the inspector
-            m_ShaderPropertyOverrides = m_ShaderToOverrideList.Values.ToList();
+            m_Shaders = newShaders.ToArray();
+            Array.Sort(m_Shaders, (a, b) => string.CompareOrdinal(a.name, b.name)); // For the inspector
+            m_ShaderPropertyOverrides = m_ShaderToOverrideList.Values.ToArray();
 
             // Material overrides
+            
+            m_MaterialToOverrideList.Clear();
 
-            foreach (var material in materials)
+            foreach (var material in newMaterials)
             {
-                var overrideList = m_MaterialPropertyOverrides.Find(x => x.material == material);
+                var overrideList = Array.Find(m_MaterialPropertyOverrides, x => x.material == material);
                 if (!overrideList)
                 {
                     overrideList = ScriptableObject.CreateInstance<MaterialPropertyOverrideList>();
@@ -187,20 +192,41 @@ namespace MaterialOverrides
                 m_MaterialToOverrideList.Add(material, overrideList);
             }
 
-            m_Materials.Clear();
-            m_Materials.AddRange(materials.ToArray());
-            m_Materials.Sort((a, b) => string.CompareOrdinal(a.name, b.name)); // For the inspector
-            m_MaterialPropertyOverrides = m_MaterialToOverrideList.Values.ToList();
+            m_Materials = newMaterials.ToArray();
+            Array.Sort(m_Materials, (a, b) => string.CompareOrdinal(a.name, b.name)); // For the inspector
+            m_MaterialPropertyOverrides = m_MaterialToOverrideList.Values.ToArray();
 
             RefreshOverrideCache();
-            ApplyOverrides();
+        }
+
+        /// Applies active and overriden properties to the list of renderers.
+        public void Apply()
+        {
+            if (m_MaterialPropertyBlock == null)
+                m_MaterialPropertyBlock = new MaterialPropertyBlock();
+            
+            foreach (var value in m_RendererOverrideCache)
+            {
+                if (!value.renderer)
+                    continue;
+                
+                m_MaterialPropertyBlock.Clear();
+                
+                if (value.shaderOverrideList)
+                    value.shaderOverrideList.ApplyTo(m_MaterialPropertyBlock);
+                
+                if (value.materialOverrideList)
+                    value.materialOverrideList.ApplyTo(m_MaterialPropertyBlock);
+                
+                value.renderer.SetPropertyBlock(m_MaterialPropertyBlock);
+            }
         }
 
         internal void RefreshOverrideCache()
         {
             foreach (var renderer in m_Renderers)
             {
-                if (!renderer)
+                if (!renderer || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
                     continue;
 
                 var sharedMaterials = renderer.sharedMaterials;
@@ -227,64 +253,6 @@ namespace MaterialOverrides
                         shaderOverrideList = shaderOverrideList, 
                         materialOverrideList = materialOverrideList
                     });
-                }
-            }
-        }
-
-        /// Applies active and overriden properties to the list of renderers.
-        public void ApplyOverrides()
-        {
-            if (m_MaterialPropertyBlock == null)
-                m_MaterialPropertyBlock = new MaterialPropertyBlock();
-            
-            foreach (var value in m_RendererOverrideCache)
-            {
-                if (!value.renderer)
-                    continue;
-                
-                m_MaterialPropertyBlock.Clear();
-                
-                if (value.shaderOverrideList && value.shaderOverrideList.active)
-                    ApplyOverrides(m_MaterialPropertyBlock, value.shaderOverrideList.overrides);
-                
-                if (value.materialOverrideList && value.materialOverrideList.active)
-                    ApplyOverrides(m_MaterialPropertyBlock, value.materialOverrideList.overrides);
-                
-                value.renderer.SetPropertyBlock(m_MaterialPropertyBlock);
-            }
-        }
-
-        /// Applies a list of individual override values to an mpb
-        static void ApplyOverrides(MaterialPropertyBlock mpb, List<ShaderPropertyOverride> propertyOverrides)
-        {
-            foreach (var o in propertyOverrides)
-            {
-                if (o.overrideState == false)
-                    continue;
-
-                switch (o.propertyInfo.type)
-                {
-                    case ShaderPropertyType.Color:
-                        mpb.SetColor(o.propertyInfo.id, o.colorValue);
-                        break;
-                    case ShaderPropertyType.Vector:
-                        mpb.SetVector(o.propertyInfo.id, o.vectorValue);
-                        break;
-                    case ShaderPropertyType.Float:
-                    case ShaderPropertyType.Range:
-                        mpb.SetFloat(o.propertyInfo.id, o.floatValue);
-                        break;
-                    case ShaderPropertyType.Texture:
-                        if (o.textureValue != null)
-                            mpb.SetTexture(o.propertyInfo.id, o.textureValue);
-                        else if (o.propertyInfo.defaultTextureValue != null)
-                            mpb.SetTexture(o.propertyInfo.id, o.propertyInfo.defaultTextureValue);
-                        break;
-#if UNITY_2021_1_OR_NEWER
-                    case ShaderPropertyType.Int:
-                        mpb.SetInt(o.propertyInfo.id, o.intValue);
-                        break;
-#endif
                 }
             }
         }

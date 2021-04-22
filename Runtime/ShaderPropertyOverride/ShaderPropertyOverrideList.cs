@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MaterialOverrides
@@ -34,11 +35,15 @@ namespace MaterialOverrides
         {
             RefreshIds();
         }
-        
+
+        void Reset()
+        {
+            RefreshIds();
+        }
+
         void RefreshIds()
         {
             m_IdToOverride.Clear();
-            
             foreach (var propertyOverride in m_Overrides)
                 m_IdToOverride.Add(propertyOverride.propertyInfo.id, propertyOverride);
         }
@@ -51,6 +56,15 @@ namespace MaterialOverrides
         public bool TryGetOverride(string name, out ShaderPropertyOverride propertyOverride)
         {
             return TryGetOverride(Shader.PropertyToID(name), out propertyOverride);
+        }
+
+        public void ApplyTo(MaterialPropertyBlock mpb)
+        {
+            if (m_Active)
+            {
+                foreach (var propertyOverride in m_Overrides)
+                    propertyOverride.ApplyTo(mpb);
+            }
         }
     }
 }
