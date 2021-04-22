@@ -6,6 +6,7 @@ using UnityEngine;
 namespace MaterialOverrides
 {
     [ExecuteAlways]
+    [AddComponentMenu("Rendering/Material Override Group")]
     public sealed class MaterialOverrideGroup : MonoBehaviour
     {
         [SerializeField]
